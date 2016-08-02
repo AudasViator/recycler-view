@@ -12,6 +12,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.OnClick;
 import ru.yandex.yamblz.R;
+import ru.yandex.yamblz.ui.adapters.ContentAdapter;
 
 public class ContentFragment extends BaseFragment {
 
@@ -40,9 +42,10 @@ public class ContentFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         rv.setLayoutManager(new GridLayoutManager(getContext(), 2));
         rv.setAdapter(new ContentAdapter());
-        //rv.addItemDecoration(new amazingDividerItemDecoration(getContext()));
+
 
         ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.DOWN | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT | ItemTouchHelper.UP, ItemTouchHelper.RIGHT) {
+
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
                 ContentAdapter adapter = (ContentAdapter) rv.getAdapter();
@@ -51,6 +54,7 @@ public class ContentFragment extends BaseFragment {
                 adapter.swapItems(startAdapterPosition, endAdapterPosition);
                 //adapter.notifyItemChanged(startAdapterPosition);
                 //adapter.notifyItemChanged(endAdapterPosition);
+
                 return true;
             }
 

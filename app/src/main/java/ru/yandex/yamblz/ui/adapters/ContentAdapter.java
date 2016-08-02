@@ -1,9 +1,11 @@
-package ru.yandex.yamblz.ui.fragments;
+package ru.yandex.yamblz.ui.adapters;
 
+import android.animation.ObjectAnimator;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -18,8 +20,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import ru.yandex.yamblz.R;
 
-class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentHolder> {
-
+public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentHolder> {
     private final Random rnd = new Random();
     private final List<Integer> colors = new ArrayList<>();
     private boolean mIsAmazingStyle;
@@ -31,7 +32,6 @@ class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentHolder> 
 
     @Override
     public void onBindViewHolder(ContentHolder holder, int position) {
-
         holder.bind(createColorForPosition(position), mIsAmazingStyle);
     }
 
@@ -58,6 +58,10 @@ class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentHolder> 
         notifyItemMoved(fromPosition, toPosition);
     }
 
+    public void updateColor(int color, int position) {
+        colors.set(position, color);
+    }
+
     public void setAmazingStyle(boolean isAmazingStyle) {
         mIsAmazingStyle = isAmazingStyle;
     }
@@ -75,6 +79,7 @@ class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentHolder> 
 
     static class ContentHolder extends RecyclerView.ViewHolder {
         private Drawable mBackgroundDrawable;
+        private int mColor;
 
         @BindView(R.id.content_item_text_view)
         TextView mTextView;
@@ -86,6 +91,7 @@ class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentHolder> 
             super(itemView);
             mBackgroundDrawable = background;
             ButterKnife.bind(this, itemView);
+            itemView.setOnTouchListener(new touchListener());
         }
 
         void bind(Integer color, boolean amazingStyle) {
@@ -95,8 +101,29 @@ class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentHolder> 
             } else {
                 mImageView.setImageDrawable(null);
             }
+            mColor = color;
             mTextView.setBackgroundColor(color);
             mTextView.setText("#".concat(Integer.toHexString(color).substring(2)));
+        }
+
+        private class touchListener implements View.OnTouchListener {
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                int r = (mColor >> 16) & 0xFF;
+                int g = (mColor >> 8) & 0xFF;
+                int b = mColor & 0xFF;
+
+                float[] hsv = new float[3];
+                Color.RGBToHSV(r, g, b, hsv);
+                hsv[0] += 0.05f;
+                
+
+                mColor = Color.HSVToColor(hsv);
+                mTextView.setText("#".concat(Integer.toHexString(mColor).substring(2)));
+                mTextView.setBackgroundColor(mColor);
+                return false;
+            }
         }
     }
 }
