@@ -117,7 +117,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
                 float[] hsv = new float[3];
                 Color.RGBToHSV(r, g, b, hsv);
                 hsv[0] += 0.05f;
-                
+
 
                 mColor = Color.HSVToColor(hsv);
                 mTextView.setText("#".concat(Integer.toHexString(mColor).substring(2)));
