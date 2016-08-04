@@ -29,7 +29,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
             value = {STYLE_SIMPLE, STYLE_AMAZING, STYLE_SWAPPED})
     public @interface StyleMode {
     }
-    
+
     public static final int STYLE_SIMPLE = 1 << 1;
     public static final int STYLE_AMAZING = 1 << 2;
     public static final int STYLE_SWAPPED = 1 << 3;
@@ -49,10 +49,16 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
 
     @Override
     public void onBindViewHolder(ContentHolder holder, int position) {
+        @StyleMode int style = mStyle;
+
+        if (mStyle == STYLE_AMAZING && position % 2 != 0) {
+            style = STYLE_SIMPLE;
+        }
+
         if (position != mLastSwapped[0] && position != mLastSwapped[1]) {
-            holder.bind(createColorForPosition(position), mStyle);
+            holder.bind(createColorForPosition(position), style);
         } else {
-            holder.bind(createColorForPosition(position), STYLE_SWAPPED | mStyle);
+            holder.bind(createColorForPosition(position), STYLE_SWAPPED | style);
         }
     }
 
@@ -63,12 +69,22 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
 
     public void deleteItem(int position) {
         colors.remove(position);
-        if (mLastSwapped[0] >= position) {
+
+        if (mLastSwapped[0] == position) {
+            mLastSwapped[0] = -1;
+        }
+
+        if (mLastSwapped[1] == position) {
+            mLastSwapped[1] = -1;
+        }
+
+        if (mLastSwapped[0] > position) {
             mLastSwapped[0]--;
         }
-        if (mLastSwapped[1] >= position) {
+        if (mLastSwapped[1] > position) {
             mLastSwapped[1]--;
         }
+
         notifyItemRemoved(position);
     }
 
@@ -77,19 +93,28 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
             return;
         }
         if (fromPosition < toPosition) {
-            mLastSwapped[0] = fromPosition;
-            mLastSwapped[1] = toPosition;
             for (int i = fromPosition; i < toPosition; i++) {
                 Collections.swap(colors, i, i + 1);
             }
         } else {
-            mLastSwapped[0] = toPosition;
-            mLastSwapped[1] = fromPosition;
             for (int i = fromPosition; i > toPosition; i--) {
                 Collections.swap(colors, i, i - 1);
             }
         }
         notifyItemMoved(fromPosition, toPosition);
+    }
+
+    public void swapItemsNotifyCostyl(int fromPosition, int toPosition) {
+        if (fromPosition == toPosition) {
+            return;
+        }
+        if (fromPosition < toPosition) {
+            mLastSwapped[0] = fromPosition;
+            mLastSwapped[1] = toPosition;
+        } else {
+            mLastSwapped[0] = toPosition;
+            mLastSwapped[1] = fromPosition;
+        }
     }
 
     public void changeColor(int color, int position) {
@@ -184,12 +209,13 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
             boolean swapped = (styleMode >> 3 & 0x1) == 1;
 
             setColor(color);
-            if (amazing) {
-                mImageView.setImageDrawable(mBackgroundDrawable);
-            }
 
             if (simple) {
                 mImageView.setImageDrawable(null);
+            }
+
+            if (amazing) {
+                mImageView.setImageDrawable(mBackgroundDrawable);
             }
 
             if (swapped) {

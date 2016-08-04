@@ -12,6 +12,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -23,6 +24,9 @@ import ru.yandex.yamblz.R;
 import ru.yandex.yamblz.ui.adapters.ContentAdapter;
 
 public class ContentFragment extends BaseFragment {
+    private boolean mIsSwapped;
+    private int mFirstChangedItem = -1;
+    private int mLastChangedItem = -1;
 
     @BindView(R.id.rv)
     RecyclerView rv;
@@ -42,15 +46,29 @@ public class ContentFragment extends BaseFragment {
         rv.setLayoutManager(new GridLayoutManager(getContext(), 2));
         rv.setAdapter(new ContentAdapter());
 
+        rv.setOnTouchListener((v, event) -> {
+            if (mIsSwapped && event.getAction() == MotionEvent.ACTION_UP) {
+                ContentAdapter adapter = (ContentAdapter) rv.getAdapter();
+                adapter.swapItemsNotifyCostyl(mFirstChangedItem, mLastChangedItem);
+                updateRv();
+                mIsSwapped = false;
+                mFirstChangedItem = mLastChangedItem = -1;
+            }
+            return false;
+        });
+
         ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.DOWN | ItemTouchHelper.UP | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT, ItemTouchHelper.RIGHT) {
 
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
                 ContentAdapter adapter = (ContentAdapter) rv.getAdapter();
-                int endAdapterPosition = target.getAdapterPosition();
-                int startAdapterPosition = viewHolder.getAdapterPosition();
-                adapter.swapItems(startAdapterPosition, endAdapterPosition);
-                updateRv();
+                int firstChangedItem = viewHolder.getAdapterPosition();
+                if (mFirstChangedItem == -1) {
+                    mFirstChangedItem = firstChangedItem;
+                }
+                mLastChangedItem = target.getAdapterPosition();
+                adapter.swapItems(firstChangedItem, mLastChangedItem);
+                mIsSwapped = true;
                 return true;
             }
 
