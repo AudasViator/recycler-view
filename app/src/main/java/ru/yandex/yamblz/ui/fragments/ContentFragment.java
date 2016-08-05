@@ -136,6 +136,7 @@ public class ContentFragment extends BaseFragment {
 
             if (increase) {
                 spanCount++;
+                rv.getRecycledViewPool().setMaxRecycledViews(0, spanCount * 3); // Иначе не хватит холдеров на все элементы
             } else {
                 if (spanCount > 1) {
                     spanCount--;

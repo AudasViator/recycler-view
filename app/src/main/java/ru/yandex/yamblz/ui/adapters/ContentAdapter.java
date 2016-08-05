@@ -67,6 +67,12 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
         return Integer.MAX_VALUE;
     }
 
+
+    @Override
+    public boolean onFailedToRecycleView(ContentHolder holder) {
+        return true;
+    }
+
     public void deleteItem(int position) {
         colors.remove(position);
 
@@ -215,7 +221,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
             }
 
             if (amazing) {
-                mImageView.setImageDrawable(mBackgroundDrawable);
+                mTextView.setBackground(mBackgroundDrawable);
             }
 
             if (swapped) {
