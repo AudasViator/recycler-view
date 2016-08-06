@@ -221,7 +221,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
             }
 
             if (amazing) {
-                mTextView.setBackground(mBackgroundDrawable);
+                mImageView.setImageDrawable(mBackgroundDrawable);
             }
 
             if (swapped) {
