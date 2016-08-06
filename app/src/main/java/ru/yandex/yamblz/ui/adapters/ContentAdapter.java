@@ -4,7 +4,6 @@ import android.animation.ValueAnimator;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.IntDef;
-import android.support.v7.app.ActionBar;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,6 +23,7 @@ import ru.yandex.yamblz.R;
 
 public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentHolder> {
 
+    // Лучше уж enum`ы, но надо и @IntDef попоробовать
     @IntDef(
             flag = true,
             value = {STYLE_SIMPLE, STYLE_AMAZING, STYLE_SWAPPED})
@@ -36,9 +36,10 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
 
     private final Random rnd = new Random();
     private final List<Integer> colors = new ArrayList<>();
-    @ActionBar.NavigationMode
+
+    @StyleMode
     private int mStyle;
-    private int[] mLastSwapped = new int[]{-1, -1};
+    private int[] mLastSwapped = new int[]{-1, -1}; // Хранит позицию свапнутых элементов
 
     @Override
     public ContentHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -51,10 +52,12 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
     public void onBindViewHolder(ContentHolder holder, int position) {
         @StyleMode int style = mStyle;
 
-        if (mStyle == STYLE_AMAZING && position % 2 != 0) {
+        boolean isAmazing = (mStyle >> 2 & 0x1) == 1;
+        if (isAmazing && position % 2 != 0) {
             style = STYLE_SIMPLE;
         }
 
+        // Если элементы свапнуты, то стиль накладывается
         if (position != mLastSwapped[0] && position != mLastSwapped[1]) {
             holder.bind(createColorForPosition(position), style);
         } else {
@@ -84,6 +87,8 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
             mLastSwapped[1] = -1;
         }
 
+        // Учитываем, что можно удалить элемент перед свапнутым,
+        // тогда свапнутый съедет
         if (mLastSwapped[0] > position) {
             mLastSwapped[0]--;
         }
@@ -110,6 +115,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
         notifyItemMoved(fromPosition, toPosition);
     }
 
+    // Вызывается, когда пользователь убрал палец с экарана
     public void swapItemsNotifyCostyl(int fromPosition, int toPosition) {
         if (fromPosition == toPosition) {
             return;
@@ -123,7 +129,7 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
         }
     }
 
-    public void changeColor(int color, int position) {
+    public void changeColorInDataset(int color, int position) {
         colors.set(position, color);
     }
 
@@ -146,11 +152,12 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
         return colors.get(position);
     }
 
-    static class ContentHolder extends RecyclerView.ViewHolder {
+    public static class ContentHolder extends RecyclerView.ViewHolder {
         private Drawable mBackgroundDrawable;
-        private ValueAnimator mAnim;
+        private ValueAnimator mAnimator;
         private ContentAdapter mContentAdapter; // Как-то неправильно это
         private int mColor;
+        private boolean mSwapped;
 
         @BindView(R.id.content_item_text_view)
         TextView mTextView;
@@ -164,10 +171,11 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
             mContentAdapter = contentAdapter;
             ButterKnife.bind(this, itemView);
             itemView.setOnClickListener(v -> {
-                if (mAnim != null && mAnim.isRunning()) {
-                    mAnim.cancel();
+                if (mAnimator != null && mAnimator.isRunning()) {
+                    mAnimator.cancel();
                 } else {
                     // И чем мне ArgbEvaluator не понравился?..
+                    // Но раз уж написал
                     int r = (mColor >> 16) & 0xFF;
                     int g = (mColor >> 8) & 0xFF;
                     int b = mColor & 0xFF;
@@ -182,9 +190,9 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
                     to[0] = (from[0] + 180) % 360;
                     to[1] += (float) Math.random();
 
-                    mAnim = ValueAnimator.ofFloat(0, 1);
-                    mAnim.setDuration(5000);
-                    mAnim.addUpdateListener(animation -> {
+                    mAnimator = ValueAnimator.ofFloat(0, 1);
+                    mAnimator.setDuration(5000);
+                    mAnimator.addUpdateListener(animation -> {
                         current[0] = from[0] + (to[0] - from[0]) * animation.getAnimatedFraction();
                         current[1] = from[1] + (to[1] - from[1]) * animation.getAnimatedFraction();
 
@@ -192,10 +200,10 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
                         if (position != -1) {
                             int color = Color.HSVToColor(current);
                             setColor(color);
-                            mContentAdapter.changeColor(color, position);
+                            mContentAdapter.changeColorInDataset(color, position);
                         }
                     });
-                    mAnim.start();
+                    mAnimator.start();
                 }
             });
         }
@@ -207,9 +215,6 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
         }
 
         void bind(Integer color, @StyleMode int styleMode) {
-            // Через ItemDecoration делать не круто, при перетаскивании рамка останется на месте
-
-            // Just for fun
             boolean simple = (styleMode >> 1 & 0x1) == 1;
             boolean amazing = (styleMode >> 2 & 0x1) == 1;
             boolean swapped = (styleMode >> 3 & 0x1) == 1;
@@ -226,7 +231,14 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentH
 
             if (swapped) {
                 mTextView.setText("SWAPPED");
+                mSwapped = true;
+            } else {
+                mSwapped = false;
             }
+        }
+
+        public boolean isSwapped() {
+            return mSwapped;
         }
     }
 }
